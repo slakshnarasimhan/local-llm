@@ -1,0 +1,22 @@
+# RAG Chatbot Dependencies
+
+# Core dependencies
+openai>=1.12.0              # OpenAI API for cloud LLM
+ollama>=0.1.0               # Ollama Python client for local LLM
+python-dotenv>=1.0.0        # Environment variable management
+streamlit>=1.28.0           # Optional: for loading secrets from ~/.streamlit/secrets.toml
+
+# Vector store and embeddings
+chromadb>=0.4.22            # Vector database for similarity search
+sentence-transformers>=2.3.1 # For generating embeddings
+
+# Document processing
+langchain>=0.1.0            # LLM application framework
+langchain-community>=0.0.20 # Community integrations
+tiktoken>=0.5.2             # Token counting for OpenAI models
+
+# Utilities
+rich>=13.7.0                # Beautiful terminal output
+pyyaml>=6.0.1               # Configuration files
+toml>=0.10.2                # For reading TOML config files
+
