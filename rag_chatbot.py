@@ -147,7 +147,7 @@ Answer:"""
         
         try:
             full_response = ""
-            response = requests.post(url, json=data, stream=True, timeout=60)
+            response = requests.post(url, json=data, stream=True, timeout=120)
             response.raise_for_status()
             
             for line in response.iter_lines():
@@ -160,7 +160,7 @@ Answer:"""
             
             return full_response
         except requests.Timeout:
-            raise Exception(f"Ollama request timed out after 60s. Is the model loaded?")
+            raise Exception(f"Ollama request timed out after 120s. Is the model loaded?")
         except requests.HTTPError as e:
             raise Exception(f"Ollama API error: {e.response.status_code} - {e.response.text}")
         except Exception as e:
