@@ -1,0 +1,216 @@
+CHANGES SUMMARY - Streamlit Secrets Integration
+================================================
+
+Date: January 2, 2026
+Goal: Automatically use OpenAI API key from ~/.streamlit/secrets.toml
+
+FILES ADDED
+-----------
+
+1. config.py (NEW)
+   - Smart configuration loader
+   - Checks Streamlit secrets first (priority 1)
+   - Falls back to .env file (priority 2)
+   - Uses defaults as fallback (priority 3)
+   - Functions:
+     * load_config() - Loads all configuration
+     * get_openai_api_key() - Gets API key from any source
+     * set_openai_key_if_available() - Sets key in openai module
+
+2. CONFIGURATION.md (NEW)
+   - Complete configuration guide
+   - Explains priority system
+   - Shows Streamlit secrets format
+   - Troubleshooting section
+   - Examples for all scenarios
+
+3. STREAMLIT_SETUP.md (NEW)
+   - Quick guide for Streamlit users
+   - What changed
+   - How to test
+   - Quick reference commands
+
+FILES MODIFIED
+--------------
+
+1. chatbot_cli.py
+   - Changed: Removed local load_config() function
+   - Added: Import from config module
+   - Now uses: config.load_config()
+
+2. demo.py
+   - Added: Import get_openai_api_key from config
+   - Changed: Uses get_openai_api_key() instead of os.getenv()
+   - Benefit: Automatically checks Streamlit secrets
+
+3. requirements.txt
+   - Added: streamlit>=1.28.0
+   - Added: toml>=0.10.2
+   - Note: Streamlit is optional (for loading secrets)
+
+4. README.md
+   - Updated: Configuration section
+   - Added: Reference to Streamlit secrets
+   - Added: Link to CONFIGURATION.md
+
+5. QUICKSTART.md
+   - Updated: Configuration options
+   - Added: Streamlit secrets priority
+   - Added: python config.py command
+
+CONFIGURATION PRIORITY
+----------------------
+
+The system now checks sources in this order:
+
+1. ~/.streamlit/secrets.toml (HIGHEST PRIORITY)
+   - Checked first
+   - Requires streamlit package
+   - Your existing file with OPENAI_API_KEY
+
+2. .env file in project directory
+   - Fallback option
+   - Traditional approach
+   - Optional override
+
+3. config.env.example
+   - Default values
+   - Template file
+   - Used if nothing else exists
+
+VERIFICATION
+------------
+
+Your setup was tested and verified:
+
+✅ Streamlit secrets file exists: /home/narasimhan/.streamlit/secrets.toml
+✅ OPENAI_API_KEY found in secrets
+✅ config.py successfully loads from Streamlit secrets
+✅ All imports work correctly
+✅ Backward compatible with .env approach
+
+TEST COMMANDS
+-------------
+
+# Verify configuration loading
+python config.py
+
+# Expected output:
+# ✓ Loading configuration from Streamlit secrets
+# Configuration loaded successfully!
+#   OpenAI API Key: Set (from Streamlit)
+
+# Test the demo
+python demo.py
+
+# Test interactive mode
+python chatbot_cli.py
+> info    # Shows configuration source
+
+WHAT YOU DON'T NEED TO DO
+--------------------------
+
+❌ Don't create .env file (unless overriding)
+❌ Don't copy API keys
+❌ Don't modify existing Streamlit secrets
+❌ Don't change config.env.example
+
+YOUR SECRETS ARE ALREADY BEING USED! 🎉
+
+BENEFITS
+--------
+
+✅ Single source of truth (no duplicate API keys)
+✅ Automatic detection (no manual config)
+✅ Backward compatible (still supports .env)
+✅ Secure (uses existing secrets management)
+✅ Flexible (can override per-project)
+
+USAGE EXAMPLES
+--------------
+
+Example 1: Run demo with your Streamlit secrets
+$ python demo.py compare
+# Automatically uses your OpenAI API key from ~/.streamlit/secrets.toml
+
+Example 2: Interactive chatbot
+$ python chatbot_cli.py
+> info              # Shows: Using Streamlit secrets
+> switch            # Toggle between OpenAI and Ollama
+> ask: What is RAG? # Uses appropriate provider
+
+Example 3: Override for specific project
+$ echo "LLM_PROVIDER=ollama" > .env
+$ python chatbot_cli.py
+# Uses Ollama for LLM, but still loads other settings from Streamlit secrets
+
+TROUBLESHOOTING
+---------------
+
+Issue: Not loading Streamlit secrets
+Fix: Run: python config.py
+     Look for: "✓ Loading configuration from Streamlit secrets"
+
+Issue: API key not found
+Fix: Run: cat ~/.streamlit/secrets.toml | grep OPENAI_API_KEY
+     Verify the key exists and is not empty
+
+Issue: Using wrong configuration
+Fix: The system shows which source it's using
+     Priority: Streamlit secrets > .env > defaults
+
+TECHNICAL DETAILS
+-----------------
+
+The config.py module works as follows:
+
+1. Try to import streamlit
+   - If successful, check st.secrets
+   - If OPENAI_API_KEY exists, use it
+   - Load other settings with defaults
+
+2. If Streamlit not available or no secrets
+   - Fall back to .env file
+   - Use python-dotenv to load
+   - Apply defaults for missing values
+
+3. Return configuration dictionary
+   - All settings in one place
+   - Easy to access in any module
+   - Consistent across application
+
+CODE CHANGES MINIMAL
+--------------------
+
+The actual code changes were minimal:
+
+Before:
+    from dotenv import load_dotenv
+    load_dotenv()
+    api_key = os.getenv('OPENAI_API_KEY')
+
+After:
+    from config import get_openai_api_key
+    api_key = get_openai_api_key()
+
+That's it! The complexity is hidden in config.py.
+
+NEXT STEPS
+----------
+
+1. Test the configuration:
+   python config.py
+
+2. Run a demo:
+   python demo.py
+
+3. Try interactive mode:
+   python chatbot_cli.py
+
+4. Read detailed guide:
+   cat CONFIGURATION.md
+
+5. See quick tips:
+   cat STREAMLIT_SETUP.md
+
+All done! Your Streamlit secrets are now integrated. 🚀
