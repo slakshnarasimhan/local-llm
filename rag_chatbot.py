@@ -5,7 +5,8 @@ This demonstrates how easy it is to switch between cloud and local inference.
 import os
 from typing import List, Dict, Optional
 import openai
-from ollama import Client as OllamaClient
+import httpx
+import json
 
 
 class RAGChatbot:
@@ -40,11 +41,10 @@ class RAGChatbot:
         self.n_results = n_results
         self.temperature = temperature
         
-        # Initialize Ollama client if needed
-        self.ollama_client = None
+        # Store Ollama connection info
+        self.ollama_base_url = ollama_base_url
         if llm_provider == "ollama":
-            self.ollama_client = OllamaClient(host=ollama_base_url)
-            print(f"✓ Connected to Ollama at {ollama_base_url}")
+            print(f"✓ Using Ollama at {ollama_base_url}")
     
     def build_context(self, retrieved_docs: List[Dict[str, any]]) -> str:
         """
@@ -117,7 +117,7 @@ Answer:"""
     
     def query_ollama(self, prompt: str) -> str:
         """
-        Query Ollama API.
+        Query Ollama API using direct HTTP (more reliable than ollama client).
         
         Args:
             prompt: Complete prompt with context
@@ -125,9 +125,10 @@ Answer:"""
         Returns:
             Generated response
         """
-        response = self.ollama_client.chat(
-            model=self.ollama_model,
-            messages=[
+        url = f"{self.ollama_base_url}/api/chat"
+        data = {
+            "model": self.ollama_model,
+            "messages": [
                 {
                     "role": "system",
                     "content": "You are a helpful AI assistant that answers questions based on provided context."
@@ -137,12 +138,24 @@ Answer:"""
                     "content": prompt
                 }
             ],
-            options={
+            "stream": False,
+            "options": {
                 "temperature": self.temperature,
                 "num_predict": 500
             }
-        )
-        return response['message']['content']
+        }
+        
+        try:
+            response = httpx.post(url, json=data, timeout=60.0)
+            response.raise_for_status()
+            result = response.json()
+            return result['message']['content']
+        except httpx.TimeoutException:
+            raise Exception(f"Ollama request timed out after 60s. Is the model loaded?")
+        except httpx.HTTPStatusError as e:
+            raise Exception(f"Ollama API error: {e.response.status_code} - {e.response.text}")
+        except Exception as e:
+            raise Exception(f"Error calling Ollama: {str(e)}")
     
     def chat(self, query: str, verbose: bool = False) -> Dict[str, any]:
         """
@@ -197,12 +210,6 @@ Answer:"""
             raise ValueError(f"Invalid provider: {new_provider}. Must be 'openai' or 'ollama'")
         
         self.llm_provider = new_provider
-        
-        # Initialize Ollama client if switching to it
-        if new_provider == "ollama" and self.ollama_client is None:
-            self.ollama_client = OllamaClient()
-            print(f"✓ Connected to Ollama")
-        
         print(f"✓ Switched to {new_provider.upper()} for LLM inference")
 
 

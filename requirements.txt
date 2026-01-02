@@ -2,7 +2,7 @@
 
 # Core dependencies
 openai>=1.12.0              # OpenAI API for cloud LLM
-ollama>=0.1.0               # Ollama Python client for local LLM
+httpx>=0.24.0               # HTTP client for Ollama API (more reliable than ollama client)
 python-dotenv>=1.0.0        # Environment variable management
 streamlit>=1.28.0           # Optional: for loading secrets from ~/.streamlit/secrets.toml
 
