@@ -1,0 +1,92 @@
+⚡ QUICK SPEED FIX - Choose One
+
+═══════════════════════════════════════════════════════════════
+
+🚀 FASTEST: Use Fast Mode (2-3x speedup)
+───────────────────────────────────────
+python chatbot_fast.py
+
+What it does: Retrieves 1 chunk instead of 3, shorter responses
+Speed: 3-5 seconds per response (was 10-15)
+
+═══════════════════════════════════════════════════════════════
+
+💨 FASTER: Install Tiny Model (5x speedup)
+───────────────────────────────────────
+ollama pull tinyllama
+echo 'OLLAMA_MODEL = "tinyllama"' >> ~/.streamlit/secrets.toml
+python chatbot_cli.py
+
+Speed: 1-2 seconds per response
+Trade-off: Slightly lower quality
+
+═══════════════════════════════════════════════════════════════
+
+⚡ INSTANT: Use Cloud Mode (for demo)
+───────────────────────────────────────
+python chatbot_cli.py
+> switch    (toggles to OpenAI)
+> ask: Your question
+
+Speed: <1 second per response
+Trade-off: Uses API credits
+
+═══════════════════════════════════════════════════════════════
+
+🎯 CURRENT STATUS
+───────────────────────────────────────
+Model: phi3:latest (3.8B parameters)
+Hardware: 100% CPU (no GPU)
+Speed: 10-15 seconds per response
+Memory: 4.1 GB loaded
+
+═══════════════════════════════════════════════════════════════
+
+📊 SPEED COMPARISON
+───────────────────────────────────────
+Normal mode:     10-15 seconds  (current)
+Fast mode:       3-5 seconds    (chatbot_fast.py)
+Tiny model:      1-2 seconds    (tinyllama)
+Cloud (OpenAI):  <1 second      (> switch)
+
+═══════════════════════════════════════════════════════════════
+
+💡 RECOMMENDED FOR YOUR DEMO
+───────────────────────────────────────
+1. Pre-warm model before demo:
+   ollama run phi3:latest "hello"
+
+2. Use cloud for main demo:
+   python chatbot_cli.py
+   > switch  (use OpenAI - instant)
+
+3. Show local at end:
+   > switch  (back to Ollama)
+   > ask: How do I install Ollama?
+   (Say: "Notice it's slower, but FREE and PRIVATE!")
+
+This highlights the cloud vs local trade-off perfectly!
+
+═══════════════════════════════════════════════════════════════
+
+⚙️ MANUAL SPEED TUNING
+───────────────────────────────────────
+Edit ~/.streamlit/secrets.toml:
+
+# Use smaller model
+OLLAMA_MODEL = "tinyllama"
+
+# Speed optimizations (uncomment)
+N_RESULTS = "1"        # Less context
+CHUNK_SIZE = "300"     # Smaller chunks
+MAX_TOKENS = "200"     # Shorter answers
+
+Then restart: python chatbot_cli.py
+
+═══════════════════════════════════════════════════════════════
+
+📖 FULL DETAILS
+───────────────────────────────────────
+Read: cat SPEED_OPTIMIZATION.md
+
+═══════════════════════════════════════════════════════════════
