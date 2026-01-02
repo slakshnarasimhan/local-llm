@@ -5,7 +5,7 @@ This demonstrates how easy it is to switch between cloud and local inference.
 import os
 from typing import List, Dict, Optional
 import openai
-import httpx
+import requests
 import json
 
 
@@ -117,7 +117,7 @@ Answer:"""
     
     def query_ollama(self, prompt: str) -> str:
         """
-        Query Ollama API using direct HTTP (more reliable than ollama client).
+        Query Ollama API using requests library with streaming.
         
         Args:
             prompt: Complete prompt with context
@@ -138,7 +138,7 @@ Answer:"""
                     "content": prompt
                 }
             ],
-            "stream": False,
+            "stream": True,
             "options": {
                 "temperature": self.temperature,
                 "num_predict": 500
@@ -146,13 +146,22 @@ Answer:"""
         }
         
         try:
-            response = httpx.post(url, json=data, timeout=60.0)
+            full_response = ""
+            response = requests.post(url, json=data, stream=True, timeout=60)
             response.raise_for_status()
-            result = response.json()
-            return result['message']['content']
-        except httpx.TimeoutException:
+            
+            for line in response.iter_lines():
+                if line:
+                    chunk = json.loads(line.decode('utf-8'))
+                    if 'message' in chunk and 'content' in chunk['message']:
+                        full_response += chunk['message']['content']
+                    if chunk.get('done', False):
+                        break
+            
+            return full_response
+        except requests.Timeout:
             raise Exception(f"Ollama request timed out after 60s. Is the model loaded?")
-        except httpx.HTTPStatusError as e:
+        except requests.HTTPError as e:
             raise Exception(f"Ollama API error: {e.response.status_code} - {e.response.text}")
         except Exception as e:
             raise Exception(f"Error calling Ollama: {str(e)}")
