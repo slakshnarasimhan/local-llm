@@ -22,6 +22,7 @@ Example format:
 OPENAI_API_KEY = "sk-your-actual-api-key-here"
 
 # Optional: Override defaults
+
 LLM_PROVIDER = "openai"
 OPENAI_MODEL = "gpt-3.5-turbo"
 OPENAI_EMBEDDING_MODEL = "text-embedding-3-small"

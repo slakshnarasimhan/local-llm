@@ -117,7 +117,7 @@ Answer:"""
     
     def query_ollama(self, prompt: str) -> str:
         """
-        Query Ollama API using requests library with streaming.
+        Query Ollama using CLI directly (bypasses stuck API).
         
         Args:
             prompt: Complete prompt with context
@@ -125,46 +125,41 @@ Answer:"""
         Returns:
             Generated response
         """
-        url = f"{self.ollama_base_url}/api/chat"
-        data = {
-            "model": self.ollama_model,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": "You are a helpful AI assistant that answers questions based on provided context."
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            "stream": True,
-            "options": {
-                "temperature": self.temperature,
-                "num_predict": 500
-            }
-        }
+        import subprocess
+        
+        # Prepend system message to prompt
+        full_prompt = f"""You are a helpful AI assistant that answers questions based on provided context.
+
+{prompt}"""
         
         try:
-            full_response = ""
-            response = requests.post(url, json=data, stream=True, timeout=120)
-            response.raise_for_status()
+            # Use ollama run with prompt as argument (this works when API hangs)
+            cmd = ["ollama", "run", self.ollama_model, full_prompt]
             
-            for line in response.iter_lines():
-                if line:
-                    chunk = json.loads(line.decode('utf-8'))
-                    if 'message' in chunk and 'content' in chunk['message']:
-                        full_response += chunk['message']['content']
-                    if chunk.get('done', False):
-                        break
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
             
-            return full_response
-        except requests.Timeout:
-            raise Exception(f"Ollama request timed out after 120s. Is the model loaded?")
-        except requests.HTTPError as e:
-            raise Exception(f"Ollama API error: {e.response.status_code} - {e.response.text}")
+            if result.returncode == 0:
+                # Strip ANSI codes and extra whitespace from output
+                output = result.stdout.strip()
+                # Remove loading spinner artifacts
+                import re
+                output = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', output)
+                output = re.sub(r'[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]', '', output)
+                return output.strip()
+            else:
+                raise Exception(f"Ollama CLI error: {result.stderr}")
+                
+        except subprocess.TimeoutExpired:
+            raise Exception(f"Ollama CLI timed out after 60s. The Ollama service may be stuck. Try: sudo systemctl restart ollama")
+        except FileNotFoundError:
+            raise Exception("Ollama CLI not found. Is it installed? Run: curl -fsSL https://ollama.com/install.sh | sh")
         except Exception as e:
-            raise Exception(f"Error calling Ollama: {str(e)}")
+            raise Exception(f"Error calling Ollama CLI: {str(e)}")
     
     def chat(self, query: str, verbose: bool = False) -> Dict[str, any]:
         """
