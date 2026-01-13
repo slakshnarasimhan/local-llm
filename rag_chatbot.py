@@ -20,7 +20,8 @@ class RAGChatbot:
         ollama_model: str = "llama3",
         ollama_base_url: str = "http://localhost:11434",
         n_results: int = 3,
-        temperature: float = 0.7
+        temperature: float = 0.7,
+        ollama_timeout: int = 300
     ):
         """
         Initialize RAG chatbot.
@@ -33,6 +34,7 @@ class RAGChatbot:
             ollama_base_url: Ollama server URL
             n_results: Number of documents to retrieve
             temperature: LLM temperature for response generation
+            ollama_timeout: Timeout in seconds for Ollama CLI calls (default: 300)
         """
         self.vector_store = vector_store
         self.llm_provider = llm_provider
@@ -40,6 +42,7 @@ class RAGChatbot:
         self.ollama_model = ollama_model
         self.n_results = n_results
         self.temperature = temperature
+        self.ollama_timeout = ollama_timeout
         
         # Store Ollama connection info
         self.ollama_base_url = ollama_base_url
@@ -134,13 +137,14 @@ Answer:"""
         
         try:
             # Use ollama run with prompt as argument (this works when API hangs)
+            # Increased timeout to 300 seconds (5 minutes) to handle slower models
             cmd = ["ollama", "run", self.ollama_model, full_prompt]
             
             result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=60
+                timeout=self.ollama_timeout
             )
             
             if result.returncode == 0:
@@ -152,10 +156,11 @@ Answer:"""
                 output = re.sub(r'[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]', '', output)
                 return output.strip()
             else:
-                raise Exception(f"Ollama CLI error: {result.stderr}")
+                error_msg = result.stderr.strip() if result.stderr else "Unknown error"
+                raise Exception(f"Ollama CLI error: {error_msg}")
                 
         except subprocess.TimeoutExpired:
-            raise Exception(f"Ollama CLI timed out after 60s. The Ollama service may be stuck. Try: sudo systemctl restart ollama")
+            raise Exception(f"Ollama CLI timed out after {self.ollama_timeout}s. The model may be taking longer than expected. Try using a smaller model, reducing the context size, or check if Ollama is running properly.")
         except FileNotFoundError:
             raise Exception("Ollama CLI not found. Is it installed? Run: curl -fsSL https://ollama.com/install.sh | sh")
         except Exception as e:
